@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import { env } from './config/env.js';
+import { connectDB, isDatabaseConnected } from './config/db.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorMiddleware.js';
 
@@ -49,6 +50,18 @@ if (env.NODE_ENV !== 'test') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Serverless DB connection middleware
+app.use(async (req, res, next) => {
+  if (env.MONGODB_URI && !isDatabaseConnected()) {
+    try {
+      await connectDB();
+    } catch (e) {
+      // Handled inside connectDB fallback
+    }
+  }
+  next();
+});
 
 // Mount API routes
 app.use('/api', apiRoutes);
